@@ -1,0 +1,24 @@
+from flask import Flask, jsonify
+import requests
+from bs4 import BeautifulSoup
+
+app = Flask(__name__)
+
+@app.route('/price', methods=['GET'])
+def get_price():
+    url = 'https://www.metal.com/Lithium-ion-Battery/202303240001'
+    response = requests.get(url)
+    if response.status_code != 200:
+        return jsonify({'error': 'Failed to retrieve product page'}), 500
+    soup = BeautifulSoup(response.text, 'html.parser')
+    price = soup.find('span', {'class': 'price'})
+    if price is None:
+        return jsonify({'error': 'Failed to extract price'}), 500
+    return jsonify({'price': price.text.strip()})
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Not found'}), 404
+
+if __name__ == '__main__':
+    app.run(debug=True)
